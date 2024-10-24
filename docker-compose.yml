@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # Serviciul pentru FChomeBase
+  fchomebase_app:
+    build:
+      context: ./FChomeBase/docker/php  # Calea către Dockerfile
+    image: fchomebase_app
+    container_name: fchomebase_app
+    working_dir: /var/www
+    volumes:
+      - ./FChomeBase:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=fchomebase_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Serviciul pentru FCcrm
+  fccrm_app:
+    build:
+      context: ./FCcrm/docker/php  # Calea către Dockerfile
+    image: fccrm_app
+    container_name: fccrm_app
+    working_dir: /var/www
+    volumes:
+      - ./FCcrm:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=fccrm_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Serviciul pentru FCWMS
+  fcwms_app:
+    build:
+      context: ./FCWMS/docker/php  # Calea către Dockerfile
+    image: fcwms_app
+    container_name: fcwms_app
+    working_dir: /var/www
+    volumes:
+      - ./FCWMS:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=fcwms_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Serviciul MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: sso_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: fchomebase_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - app-network
+    ports:
+      - "3306:3306"
+
+  # Serviciul Nginx
+  nginx:
+    image: nginx:latest
+    container_name: sso_nginx
+    volumes:
+      - ./FChomeBase:/var/www/FChomeBase
+      - ./FCcrm:/var/www/FCcrm
+      - ./FCWMS:/var/www/FCWMS
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf  # Configurația Nginx
+    ports:
+      - "8000:80"  # Acces Nginx pe portul 8000
+    depends_on:
+      - fchomebase_app
+      - fccrm_app
+      - fcwms_app
+    networks:
+      - app-network
+
+  # Serviciul PhpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: fchomebase_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: secret
+    ports:
+      - "8080:80"  # Acces PhpMyAdmin pe portul 8080
+    networks:
+      - app-network
+
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
