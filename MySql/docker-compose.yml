@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # MySQL Service
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword       # Root password
+      MYSQL_DATABASE: homebase                # Database name
+      MYSQL_USER: user                        # Default user
+      MYSQL_PASSWORD: userpassword            # Password for the user
+    ports:
+      - "3306:3306"                           # Expose MySQL port
+    volumes:
+      - ./homebase_data:/var/lib/mysql        # Persist MySQL data in 'homebase_data' folder
+    networks:
+      - mynetwork
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_container
+    environment:
+      PMA_HOST: mysql                         # Connect to MySQL service
+      PMA_PORT: 3306
+      PMA_USER: root                          # MySQL root user for phpMyAdmin
+      PMA_PASSWORD: rootpassword              # Root password for MySQL
+    ports:
+      - "8080:80"                             # Expose phpMyAdmin on port 8080
+    depends_on:
+      - mysql
+    networks:
+      - mynetwork
+
+# Volume for data persistence
+volumes:
+  mysql_data:
+
+# Network for internal communication
+networks:
+  mynetwork:
+    driver: bridge
