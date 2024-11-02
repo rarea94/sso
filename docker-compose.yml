@@ -1,0 +1,67 @@
+version: '3.8'  # Define the Docker Compose version
+
+services:
+  app:
+    build:
+      context: /Services/FCWMS       # Update context to the new FCWMS folder location
+      dockerfile: Dockerfile          # Specify the Dockerfile name
+    image: laravel-app
+    container_name: laravel-app
+    restart: unless-stopped
+    working_dir: /var/www/FCWMS
+    volumes:
+      - /Services/FCWMS:/var/www/FCWMS  # Update mount path for FCWMS
+    networks:
+      - laravel
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./FCWMS:/var/www/FCWMS
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/logs:/var/log/nginx  # Add this line to bind mount logs
+    networks:
+      - laravel
+    depends_on:
+      - app
+      
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword         # Root password
+      MYSQL_DATABASE: homebase                  # Database name
+      MYSQL_USER: user                          # Default user
+      MYSQL_PASSWORD: rootpassword              # Password for the user
+    ports:
+      - "3306:3306"                             # Expose MySQL port
+    volumes:
+      - ./homebase_data:/var/lib/mysql          # Persist MySQL data in 'homebase_data' folder
+    networks:
+      - mynetwork
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_container
+    environment:
+      PMA_HOST: mysql                           # Connect to MySQL service
+      PMA_PORT: 3306
+      PMA_USER: user                            # MySQL user for phpMyAdmin
+      PMA_PASSWORD: userpassword                # Password for the MySQL user
+    ports:
+      - "8080:80"                               # Expose phpMyAdmin on port 8080
+    depends_on:
+      - mysql                                   # Ensure MySQL starts before phpMyAdmin
+    networks:
+      - mynetwork
+
+networks:
+  laravel:
+  mynetwork:                                   # Define 'mynetwork' for MySQL and phpMyAdmin communication
+
+volumes:
+  dbdata:                                       # Volume for MySQL data persistence
