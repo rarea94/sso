@@ -30,14 +30,15 @@ services:
       - "8080:80"                             # Expose phpMyAdmin on port 8080
     depends_on:
       - mysql
-    networks:
-      - mynetwork
 
+    networks:
+      - laravel_network  # Reference the same network
+      
 # Volume for data persistence
 volumes:
   mysql_data:
 
-# Network for internal communication
+
 networks:
-  mynetwork:
-    driver: bridge
+  laravel_network:
+    external: true 
